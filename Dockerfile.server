@@ -1,0 +1,8 @@
+FROM centos:latest
+
+RUN yum install -y gcc
+
+RUN mkdir /tmp/work
+ADD server.c /tmp/work/
+
+

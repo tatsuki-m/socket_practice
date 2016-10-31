@@ -1,0 +1,21 @@
+version: '2'
+
+services:
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    environment:
+      SOCKET: /tmp/work/socket
+    volumes:
+      - socket:/tmp/work/socket
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    environment:
+      SOCKET: /tmp/work/socket
+    volumes:
+      - socket:/tmp/work/socket
+volumes:
+  socket:

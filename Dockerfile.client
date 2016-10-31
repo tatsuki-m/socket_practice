@@ -1,0 +1,7 @@
+FROM centos:latest
+
+RUN yum install -y gcc
+
+RUN mkdir /tmp/work
+ADD client.c /tmp/work/
+
