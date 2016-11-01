@@ -9,19 +9,21 @@
 
 # define SOCKET_FILE "/tmp/unix.sock"
 
-void callMethod(int s) {
-  char buf[] = "calldoorapi()";
+void callMethod(int);
 
-  if (write(s, buf, strlen(buf)) == -1) {
-    fprintf(stderr, "send error\n");
-    return;
-  }
-}
+typedef struct Func{
+  char name[20];
+  int int_arg;
+  char ch_arg[20];
+  int int_return;
+  char ch_return[20];
+}Func;
 
 int main(void) {
   int s, cc;
   struct sockaddr_un sa;
   char buf[256];
+  Func func;
 
   /* generate socket */
   if ((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
@@ -42,24 +44,13 @@ int main(void) {
   }
   fprintf(stderr, "Connected.\n");
 
-  /* display the message on screen from server*/
-  /* fprintf(stderr, "Message from the server:\n");
-  while ((cc == read(s, buf, sizeof(buf))) > 0)
-    callMethod(s);
-  if ((cc == -1)) {
-    perror("read");
-    exit(1);
-  }
-  fprintf(stderr, "Connected\n");
-  */
+  strcpy(func.name, "hello");
 
-  char methods[] = "calldoorapi()";
-
-  if (write(s, methods, strlen(methods)) == -1) {
+  if (write(s, &func, sizeof(func)) == -1) {
     fprintf(stderr, "send error\n");
   }
-  read(s, methods, strlen(methods));
-  printf("methods =%s", methods);
+  read(s, &func, sizeof(func));
+  printf("return value =%d", func.int_return);
 
   /* stop connection*/
   if (shutdown(s, SHUT_RDWR) == -1) {
@@ -72,5 +63,14 @@ int main(void) {
     exit(1);
   }
   return 0;
+}
+
+void callMethod(int s) {
+  char buf[] = "hello";
+
+  if (write(s, buf, strlen(buf)) == -1) {
+    fprintf(stderr, "send error\n");
+    return;
+  }
 }
 

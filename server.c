@@ -13,11 +13,23 @@ enum {
     NQUEUE_SIZE = 5,
 };
 
+typedef struct Func{
+  char name[20];
+  int int_arg;
+  char ch_arg[20];
+  int int_return;
+  char ch_return[20];
+}Func;
+
+void callMethod(Func *func);
+
 int main(void) {
     int s, ws, cc;
     struct sockaddr_un sa, ca;
     const int soval = 1;
     socklen_t ca_len;
+
+    Func func;
 
     unlink("/tmp/unix.sock");
 
@@ -53,7 +65,6 @@ int main(void) {
     for (;;) {
       pid_t forkcc;
       int status;
-      char ch[256];
 
       while (waitpid(-1, &status, WNOHANG) > 0);
 
@@ -75,13 +86,13 @@ int main(void) {
         }
 
         /* extract method which client sent */
-        read(ws, ch, sizeof(ch));
-        strcpy(ch, "hoge");
-        printf(ch);
+        read(ws, &func, sizeof(func));
+
+        callMethod(&func);
 
         /* send message to client*/
         fprintf(stderr, "Sending the message...\n");
-        if ((cc = write(ws, ch, strlen(ch))) == -1 ) {
+        if ((cc = write(ws, &func, sizeof(func))) == -1 ) {
           perror("child: write");
           exit(1);
         }
@@ -109,5 +120,14 @@ int main(void) {
         exit(1);
       }
     }
+}
+
+void callMethod(Func *func) {
+  printf(func->name);
+  if(!strcmp(func->name, "hello")) {
+    func->int_return = 10;
+  } else {
+    perror("no method");
+  }
 }
 
