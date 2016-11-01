@@ -7,12 +7,21 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-# define SOCKET_FILE "socket"
+# define SOCKET_FILE "/tmp/unix.sock"
+
+void callMethod(int s) {
+  char buf[] = "calldoorapi()";
+
+  if (write(s, buf, strlen(buf)) == -1) {
+    fprintf(stderr, "send error\n");
+    return;
+  }
+}
 
 int main(void) {
   int s, cc;
   struct sockaddr_un sa;
-  char buf[1024];
+  char buf[256];
 
   /* generate socket */
   if ((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
@@ -34,14 +43,23 @@ int main(void) {
   fprintf(stderr, "Connected.\n");
 
   /* display the message on screen from server*/
-  fprintf(stderr, "Message from the server:\n");
+  /* fprintf(stderr, "Message from the server:\n");
   while ((cc == read(s, buf, sizeof(buf))) > 0)
-    write(1, buf, cc);
+    callMethod(s);
   if ((cc == -1)) {
     perror("read");
     exit(1);
   }
   fprintf(stderr, "Connected\n");
+  */
+
+  char methods[] = "calldoorapi()";
+
+  if (write(s, methods, strlen(methods)) == -1) {
+    fprintf(stderr, "send error\n");
+  }
+  read(s, methods, strlen(methods));
+  printf("methods =%s", methods);
 
   /* stop connection*/
   if (shutdown(s, SHUT_RDWR) == -1) {
@@ -55,3 +73,4 @@ int main(void) {
   }
   return 0;
 }
+

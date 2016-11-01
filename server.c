@@ -8,18 +8,18 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-# define SOCKET_FILE "socket"
+# define SOCKET_FILE "/tmp/unix.sock"
 enum {
     NQUEUE_SIZE = 5,
 };
-
-char *message = "hello!¥Good Bye!!\n";
 
 int main(void) {
     int s, ws, cc;
     struct sockaddr_un sa, ca;
     const int soval = 1;
     socklen_t ca_len;
+
+    unlink("/tmp/unix.sock");
 
     /* generate socket */
     if ((s = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
@@ -51,6 +51,12 @@ int main(void) {
     fprintf(stderr, "Ready. \n");
 
     for (;;) {
+      pid_t forkcc;
+      int status;
+      char ch[256];
+
+      while (waitpid(-1, &status, WNOHANG) > 0);
+
       fprintf(stderr, "Wanting for a connection...\n");
       ca_len = sizeof(ca);
       if ((ws = accept(s, (struct sockaddr *)&ca, &ca_len)) == -1) {
@@ -60,31 +66,48 @@ int main(void) {
 
       fprintf(stderr, "Connection established.\n");
 
-      /* send message to client*/
-      fprintf(stderr, "Sending the message...\n");
-      if ((cc == write(ws, message, strlen(message))) == -1 ) {
-        perror("write");
+      if ((forkcc = fork()) == -1) {
+        perror("fork");
         exit(1);
-      }
-      fprintf(stderr, "Message sent.\n");
+      } else if (forkcc == 0) {
+        if (close(s) == -1) {
+          perror("child: close listening socket");
+        }
 
-      /* Stop connection*/
-      if (shutdown(ws, SHUT_RDWR) == -1) {
-        perror("shutdown");
-        exit(1);
+        /* extract method which client sent */
+        read(ws, ch, sizeof(ch));
+        strcpy(ch, "hoge");
+        printf(ch);
+
+        /* send message to client*/
+        fprintf(stderr, "Sending the message...\n");
+        if ((cc = write(ws, ch, strlen(ch))) == -1 ) {
+          perror("child: write");
+          exit(1);
+        }
+        fprintf(stderr, "Message sent.\n");
+
+        /* stop connection*/
+        if (shutdown(ws, SHUT_RDWR) == -1) {
+          perror("shutdown");
+          exit(1);
+        }
+
+        /* close socket*/
+        if (close(ws) == -1) {
+          perror("close");
+          exit(1);
+        }
+
+        /* exit child process */
+        exit(0);
       }
 
-      /* close socket*/
+      /* parent process */
       if (close(ws) == -1) {
         perror("close");
         exit(1);
       }
     }
 }
-
-
-
-
-
-
 
